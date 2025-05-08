@@ -1,0 +1,45 @@
+const router = require('express').Router();
+const {   createCategory , addSubCategory , getAllCategories, getCategoryById , deleteCategory , deleteSubCategory} = require('./categoriesController');
+const multer = require('multer')
+const path = require('path')
+
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, path.join(__dirname, '../../../public/categories'))
+    },
+    filename: (req, file, cb) => {
+      const ext = path.extname(file.originalname)
+      const name = file.fieldname + '-' + Date.now() + ext
+      cb(null, name)
+    }
+  })
+  
+  const upload = multer({ storage })
+
+  
+
+
+router.post('/createCategory',
+    upload.fields([
+      { name: 'image', maxCount: 1 },
+      { name: 'subCategoryImages', maxCount: 20 },
+      { name: 'itemImages', maxCount: 100 }
+    ]), createCategory)
+
+    router.post('/addSubCategory/:categoryId',
+      upload.fields([
+        { name: 'subCategoryImage', maxCount: 1 },
+        { name: 'itemImages', maxCount: 100 }
+      ]), 
+      addSubCategory
+    );
+
+    router.get('/getAllCategories', getAllCategories);
+    router.get('/getCategoryById/:categoryId', getCategoryById);
+
+    router.delete('/deleteCategory',deleteCategory)
+    router.delete('/deleteSubCategory',deleteSubCategory)
+module.exports = router;
+
+

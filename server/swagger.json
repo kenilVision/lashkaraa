@@ -1,0 +1,29 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Food Delivery API",
+    "description": "API for food delivery system including user, vendor, delivery agent, and analytics functionality",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5050/api/v1",
+      "description": "Local development server"
+    }
+  ],
+  "paths": {
+
+    
+
+
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}
