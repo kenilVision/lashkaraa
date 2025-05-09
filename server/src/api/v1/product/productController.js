@@ -2,111 +2,134 @@ const Product = require("../../../db/model/product");
 const fs = require("fs");
 const path = require("path");
 const Category =  require('../../../db/model/categories')
-const createProduct = async (req, res) => {
-  try {
-    const {
-      name,
-      price,
-      originalPrice,
-      discount,
-      sizes,
-      productDetails,
-      readyToShip,
-      categoryId,      
-      subCategoryId,   
-      itemId,          
-    } = req.body;
-
+const SubCategory =  require('../../../db/model/subCategories')
+    const createProduct = async (req, res) => {
+      try {
+        const {
+          name,
+          price,
+          discount,
+          sizes,
+          productDetails,
+          readyToShip,
+          categoryId,
+          subCategoryId,
+          isFeatured,
+          isBestseller,
+        } = req.body;
     
-    if (
-      !name ||
-      !price ||
-      !originalPrice ||
-      !discount ||
-      !sizes ||
-      !categoryId 
-    ) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Please provide all required fields.",
-        });
-    }
+        if (
+          !name ||
+          !price ||
+          !discount ||
+          !sizes ||
+          !categoryId
+        ) {
+          return res.status(400).json({
+            success: false,
+            message: "Please provide all required fields.",
+          });
+        }
 
-    const isReadyToShip = readyToShip !== undefined ? readyToShip : false;
+        const isReadyToShip = (Array.isArray(readyToShip) ? readyToShip[0] : readyToShip) === 'true' || readyToShip === true;
+        const isFeaturedProduct = (Array.isArray(isFeatured) ? isFeatured[0] : isFeatured) === 'true' || isFeatured === true;
+        const isBestsellerProduct = (Array.isArray(isBestseller) ? isBestseller[0] : isBestseller) === 'true' || isBestseller === true;
 
-    const images = req.files.images
-      ? req.files.images.map((file) => `/public/products/${file.filename}`)
-      : [];
-    const video =
-      req.files.productVideos && req.files.productVideos[0]
-        ? `/public/productVideos/${req.files.productVideos[0].filename}`
-        : null;
+        console.log(isReadyToShip , readyToShip , isFeaturedProduct , isFeatured)
+
+        const media = [];
+        if (req.files?.images) {
+          media.push(
+            ...req.files.images.map((file) => ({
+              url: `/public/products/${file.filename}`,
+              type: 'image',
+            }))
+          );
+        }
+        if (req.files?.productVideos) {
+          media.push({
+            url: `/public/productVideos/${req.files.productVideos[0].filename}`,
+            type: 'video',
+          });
+        }
 
         const category = await Category.findById(categoryId);
         if (!category) {
-          return res.status(404).json({ 
-            success: false, 
-            message: "Category not found." 
+          return res.status(404).json({
+            success: false,
+            message: "Category not found.",
           });
         }
         const categorySlug = category.name.toLowerCase().replace(/\s+/g, '-');
 
-
         let subCategorySlug = null;
-        let itemSlug = null;
-    
+        let groupSlug = null; 
         
         if (subCategoryId) {
-          const subCategory = category.subCategories.find(
-            sub => sub._id.toString() == subCategoryId
-          );
+         
+          const subCategory = await SubCategory.findById(subCategoryId);
+          
           if (!subCategory) {
             return res.status(400).json({ success: false, message: "Subcategory not found." });
           }
+        
+         
           subCategorySlug = subCategory.name.toLowerCase().replace(/\s+/g, '-');
-    
+        
           
-          if (itemId) {
-            const item = subCategory.items.find(item => item._id.toString() === itemId);
-            if (!item) {
-              return res.status(400).json({ success: false, message: "Item not found." });
-            }
-            itemSlug = item.name.toLowerCase().replace(/\s+/g, '-');
+          if (subCategory.group) {
+            groupSlug = subCategory.group.toLowerCase().replace(/\s+/g, '-');
           }
         }
-    
-    const newProduct = new Product({
-      name,
-      price,
-      originalPrice,
-      discount,
-      sizes: sizes.split(",").map(item => item.trim()),
-      productDetails: JSON.parse(productDetails),
-      images,
-      video,
-      readyToShip: isReadyToShip,
-      categoryId, 
-      subCategoryId,   
-      itemId,        
-      categorySlug,
-      subCategorySlug,
-      itemSlug,  
-    });
 
-    const savedProduct = await newProduct.save();
+          const productDetailsArray = productDetails
+          ? JSON.parse(productDetails) 
+          : [];
 
-    return res.status(201).json({
-      success: true,
-      message: "Product created successfully.",
-      product: savedProduct,
-    });
-  } catch (error) {
-    console.error("Error creating product:", error);
-    return res.status(500).json({ success: false, message: error.message });
-  }
-};
+          
+          const newProduct = new Product({
+            name,
+            price,
+            discount,
+            sizes: Array.isArray(sizes)
+            ? sizes
+            : JSON.parse(sizes).map(size => {
+                if (
+                  !size.label ||
+                  !['Unstitched', 'XXS', 'XS', 'S', 'M', 'L', 'XL', 'Custom'].includes(size.label) ||
+                  typeof size.quantity !== 'number'
+                ) {
+                  throw new Error('Invalid size format or values.');
+                }
+                return {
+                  label: size.label,
+                  quantity: size.quantity
+                };
+              }),
+            productDetails: productDetailsArray,
+            media, 
+            readyToShip: isReadyToShip,
+            isFeatured: isFeaturedProduct,
+            isBestseller: isBestsellerProduct,
+            categoryId,
+            subCategoryId,
+            categorySlug,
+            subCategorySlug,
+            groupSlug,
+          });
+      
+          const savedProduct = await newProduct.save();
+      
+          return res.status(201).json({
+            success: true,
+            message: "Product created successfully.",
+            product: savedProduct,
+          });
+      } catch (error) {
+        console.error("Error creating product:", error);
+        return res.status(500).json({ success: false, message: error.message });
+      }
+    };
 
     const getAllProducts = async (req, res) => {
     try {
@@ -116,24 +139,77 @@ const createProduct = async (req, res) => {
 
     const { slug } = req.params; 
 
+    const { embroidery, fabric, color , sort  } = req.query;
+
     const filter = {};  
 
     if (slug) {
-      filter.$or = [
-        { categorySlug: slug },
-        { subCategorySlug: slug },
-        { itemSlug: slug },
-      ];
-
-      if (slug.toLowerCase() === 'true' || slug.toLowerCase() === 'false') {
-        filter.$or.push({ readyToShip: slug.toLowerCase() === 'true' });
+      if (slug === 'ready-to-ship') {
+        filter.readyToShip = true; 
+      } else if (slug === 'bestseller') {
+        filter.isBestseller = true; 
+      } else {
+        filter.$or = [
+          { categorySlug: slug },
+          { subCategorySlug: slug },
+          { groupSlug: slug },
+        ];
       }
     }
+
+    if (embroidery) {
+      const embroideryArray = embroidery.split(',').map(item => item.trim());
+      filter['productDetails.embroidery'] = { $in: embroideryArray };
+    }
+
+
+    if (fabric) {
+      const fabricArray = fabric.split(',').map(item => item.trim());
+      filter['productDetails.fabric'] = { $in: fabricArray };
+    }
+
+    if (color) {
+      const colorArray = color.split(',').map(item => item.trim());
+      filter['productDetails.color'] = { $in: colorArray };
+    }
+
+    let sortCriteria = { createdAt: -1 }; 
+
+    if (sort) {
+      switch (sort.toLowerCase()) {
+        case 'featured':
+          sortCriteria = { featured: -1 };
+          break;
+        case 'bestseller':
+          sortCriteria = { bestseller: -1 }; 
+          break;
+        case 'alphabetical-asc':
+          sortCriteria = { name: 1 }; 
+          break;
+        case 'alphabetical-desc':
+          sortCriteria = { name: -1 }; 
+          break;
+        case 'price':
+          sortCriteria = { price: 1 }; 
+          break;
+        case 'price-desc':
+          sortCriteria = { price: -1 }; 
+          break;
+        case 'date-asc':
+          sortCriteria = { createdAt: 1 }; 
+          break;
+        case 'date-desc':
+        default:
+          sortCriteria = { createdAt: -1 }; 
+          break;
+      }
+    }
+
 
     const products = await Product.find(filter)
       .skip(skip)
       .limit(limit)
-      .sort({ createdAt: -1 });
+      .sort(sortCriteria);
 
     const totalProducts = await Product.countDocuments(filter);
 
@@ -152,7 +228,6 @@ const createProduct = async (req, res) => {
       return res.status(500).json({ success: false, message: error.message });
     }
      };
-  
 
      const getProductBySlug = async (req, res) => {
     try {

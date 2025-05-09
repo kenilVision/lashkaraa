@@ -48,13 +48,18 @@ const userSchema = new mongoose.Schema({
         required: true,
         unique: true,
     },
+    password: {
+      type: String,
+      required: true,
+    }    
+    ,
     isActive: {
         type: Boolean,
         default: true,
     },
     address: {
         type: addressSchema,
-        required: true,
+        
       },
 }, { timestamps: true });
 

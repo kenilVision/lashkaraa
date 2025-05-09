@@ -23,14 +23,11 @@ const storage = multer.diskStorage({
 router.post('/createCategory',
     upload.fields([
       { name: 'image', maxCount: 1 },
-      { name: 'subCategoryImages', maxCount: 20 },
-      { name: 'itemImages', maxCount: 100 }
     ]), createCategory)
 
     router.post('/addSubCategory/:categoryId',
       upload.fields([
         { name: 'subCategoryImage', maxCount: 1 },
-        { name: 'itemImages', maxCount: 100 }
       ]), 
       addSubCategory
     );
@@ -38,8 +35,9 @@ router.post('/createCategory',
     router.get('/getAllCategories', getAllCategories);
     router.get('/getCategoryById/:categoryId', getCategoryById);
 
-    router.delete('/deleteCategory',deleteCategory)
-    router.delete('/deleteSubCategory',deleteSubCategory)
+    router.delete('/categories/:categoryId', deleteCategory);
+    router.delete('/subcategories/:subCategoryId', deleteSubCategory);
+
 module.exports = router;
 
 
