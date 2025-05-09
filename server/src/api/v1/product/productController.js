@@ -141,21 +141,26 @@ const SubCategory =  require('../../../db/model/subCategories')
 
     const { embroidery, fabric, color , sort  } = req.query;
 
-    const filter = {};  
+    let slugFilter = {};
 
     if (slug) {
       if (slug === 'ready-to-ship') {
-        filter.readyToShip = true; 
+        slugFilter = { readyToShip: true };
       } else if (slug === 'bestseller') {
-        filter.isBestseller = true; 
+        slugFilter = { isBestseller: true };
       } else {
-        filter.$or = [
-          { categorySlug: slug },
-          { subCategorySlug: slug },
-          { groupSlug: slug },
-        ];
+        slugFilter = {
+          $or: [
+            { categorySlug: slug },
+            { subCategorySlug: slug },
+            { groupSlug: slug },
+          ]
+        };
       }
     }
+    
+    
+    const filter = { ...slugFilter };
 
     if (embroidery) {
       const embroideryArray = embroidery.split(',').map(item => item.trim());
@@ -213,6 +218,10 @@ const SubCategory =  require('../../../db/model/subCategories')
 
     const totalProducts = await Product.countDocuments(filter);
 
+    const allEmbroidery = await Product.distinct('productDetails.embroidery', slugFilter);
+    const allFabric = await Product.distinct('productDetails.fabric', slugFilter);
+    const allColor = await Product.distinct('productDetails.color', slugFilter);
+
     return res.status(200).json({
       success: true,
       currentPage: page,
@@ -220,6 +229,11 @@ const SubCategory =  require('../../../db/model/subCategories')
       totalProducts,
       products,
       filterUsed: slug ? { slug } : undefined,
+      filterOptions: {
+        embroidery: allEmbroidery,
+        fabric: allFabric,
+        color: allColor
+      }
     });
 
 
