@@ -21,13 +21,17 @@ const addressSchema = new mongoose.Schema({
       required: true,
     },
     pinCode: {
-      type: String,
+      type: Number,
       required: true,
     },
     phoneNumber: {
-      type: String,
+      type: Number,
       required: true,
     },
+    company:{
+      type: String,
+      required: false,
+    }
   }, { _id: false });
 
 

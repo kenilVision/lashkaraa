@@ -1,8 +1,8 @@
 const router = require('express').Router();
 const multer = require('multer');
 const path = require('path');
-const { createProduct ,  getAllProducts,
-    getProductBySlug } = require('./productController');
+const { createProduct ,  getAllProducts, readToShipwithSlug,
+    getProductBySlug ,celebCloset , updateCelebCloset} = require('./productController');
 
 
 const storage = multer.diskStorage({
@@ -10,7 +10,10 @@ const storage = multer.diskStorage({
     let folder = "";
     if (file.fieldname === 'productVideos') {
       folder = path.join(__dirname, '../../../public/productVideos');  
-    } else {
+    } 
+    else if (file.fieldname === 'celebImage') {
+      folder = path.join(__dirname, '../../../public/celebImages');
+    }else {
       folder = path.join(__dirname, '../../../public/products');  
     }
     cb(null, folder);  
@@ -25,6 +28,9 @@ const upload = multer({ storage: storage });
 
 router.post('/createProduct', upload.fields([{ name: 'images'}, { name: 'productVideos', maxCount: 1 }]), createProduct);
 router.get("/getAllProducts/:slug", getAllProducts);
+router.get("/readToShipwithSlug/:slug", readToShipwithSlug);
 router.get("/getProductBySlug/:slug", getProductBySlug);
+router.get("/celebCloset", celebCloset);
 
+router.patch('/:productId/celeb', upload.single('celebImage'), updateCelebCloset);
 module.exports = router;

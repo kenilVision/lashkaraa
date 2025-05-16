@@ -1,7 +1,7 @@
 const Order = require('../../../db/model/order'); 
 
     const placeOrder= async (req, res) => {
-    const { userId, shippingAddress, items, paymentMethod = 'cod' } = req.body;
+    const { userId, shippingAddress,billingAddress, items, paymentMethod = 'cod' } = req.body;
 
     try { 
 
@@ -18,6 +18,7 @@ const Order = require('../../../db/model/order');
         userId,
         totalAmount,
         shippingAddress,
+        billingAddress,
         paymentMethod,
         items,
         orderStatus: [{ status: 'pending' }], 

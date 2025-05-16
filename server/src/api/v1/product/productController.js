@@ -3,6 +3,9 @@ const fs = require("fs");
 const path = require("path");
 const Category =  require('../../../db/model/categories')
 const SubCategory =  require('../../../db/model/subCategories')
+const ProductFilter = require("../../../db/model/productFilter");
+const FilterOption = require("../../../db/model/filterOption");
+const mongoose = require("mongoose");
     const createProduct = async (req, res) => {
       try {
         const {
@@ -35,7 +38,7 @@ const SubCategory =  require('../../../db/model/subCategories')
         const isFeaturedProduct = (Array.isArray(isFeatured) ? isFeatured[0] : isFeatured) === 'true' || isFeatured === true;
         const isBestsellerProduct = (Array.isArray(isBestseller) ? isBestseller[0] : isBestseller) === 'true' || isBestseller === true;
 
-        console.log(isReadyToShip , readyToShip , isFeaturedProduct , isFeatured)
+
 
         const media = [];
         if (req.files?.images) {
@@ -65,7 +68,8 @@ const SubCategory =  require('../../../db/model/subCategories')
         let subCategorySlug = null;
         let groupSlug = null; 
         
-        if (subCategoryId) {
+
+        if (subCategoryId && mongoose.Types.ObjectId.isValid(subCategoryId)) {
          
           const subCategory = await SubCategory.findById(subCategoryId);
           
@@ -81,7 +85,12 @@ const SubCategory =  require('../../../db/model/subCategories')
             groupSlug = subCategory.group.toLowerCase().replace(/\s+/g, '-');
           }
         }
+        else{
+          delete req.body.subCategoryId;
+        }
 
+
+        console.log("hello")
           const productDetailsArray = productDetails
           ? JSON.parse(productDetails) 
           : [];
@@ -103,7 +112,9 @@ const SubCategory =  require('../../../db/model/subCategories')
                 }
                 return {
                   label: size.label,
-                  quantity: size.quantity
+                  quantity: size.quantity,
+                  fitting : size.fitting,
+                  blousePadding:size.blousePadding
                 };
               }),
             productDetails: productDetailsArray,
@@ -140,7 +151,7 @@ const SubCategory =  require('../../../db/model/subCategories')
     const { slug } = req.params; 
 
     const { embroidery, fabric, color , sort  } = req.query;
-
+      console.log(req.query)
     let slugFilter = {};
 
     if (slug) {
@@ -162,20 +173,52 @@ const SubCategory =  require('../../../db/model/subCategories')
     
     const filter = { ...slugFilter };
 
+    const filterOptionConditions = [];
+
     if (embroidery) {
       const embroideryArray = embroidery.split(',').map(item => item.trim());
-      filter['productDetails.embroidery'] = { $in: embroideryArray };
-    }
+      const filterOptions = await FilterOption.find({
+        slug: { $in: embroideryArray },
+      });
+      const embroideryOptionIds = filterOptions.map(option => option._id);
 
+      filterOptionConditions.push({ filterOptionId: { $in: embroideryOptionIds } });
+    }
 
     if (fabric) {
       const fabricArray = fabric.split(',').map(item => item.trim());
-      filter['productDetails.fabric'] = { $in: fabricArray };
+      const filterOptions = await FilterOption.find({
+        slug: { $in: fabricArray },
+      });
+      const fabricOptionIds = filterOptions.map(option => option._id);
+      filterOptionConditions.push({ filterOptionId: { $in: fabricOptionIds } });
     }
 
     if (color) {
       const colorArray = color.split(',').map(item => item.trim());
-      filter['productDetails.color'] = { $in: colorArray };
+      const filterOptions = await FilterOption.find({
+        slug: { $in: colorArray },
+      });
+      const colorOptionIds = filterOptions.map(option => option._id);
+      filterOptionConditions.push({ filterOptionId: { $in: colorOptionIds } });
+    }
+    let filteredProductIds = null;
+
+    if (filterOptionConditions.length > 0) {
+
+    
+
+      const productFilters = await ProductFilter.find({
+        $or: filterOptionConditions
+      });
+
+
+      const productIds = productFilters.map(pf => pf.productId);
+      filteredProductIds = [...new Set(productIds.map(id => id.toString()))]; // Deduplicated
+    }
+
+    if (filteredProductIds) {
+      filter._id = { $in: filteredProductIds };
     }
 
     let sortCriteria = { createdAt: -1 }; 
@@ -218,9 +261,93 @@ const SubCategory =  require('../../../db/model/subCategories')
 
     const totalProducts = await Product.countDocuments(filter);
 
-    const allEmbroidery = await Product.distinct('productDetails.embroidery', slugFilter);
-    const allFabric = await Product.distinct('productDetails.fabric', slugFilter);
-    const allColor = await Product.distinct('productDetails.color', slugFilter);
+    let slugData = {};
+
+    if (slug) {
+      if (slug === 'ready-to-ship') {
+        slugData = { 'product.readyToShip': true };
+      } else if (slug === 'bestseller') {
+        slugData = { 'product.isBestseller': true };
+      } else {
+        slugData = {
+          $or: [
+            { 'product.categorySlug': slug },
+            { 'product.subCategorySlug': slug },
+            { 'product.groupSlug': slug },
+          ]
+        };
+      }
+    }
+
+    const filterData = await ProductFilter.aggregate([
+      {
+        $lookup: {
+          from: 'products',
+          localField: 'productId',
+          foreignField: '_id',
+          as: 'product'
+        }
+      },
+      { $unwind: '$product' },
+      { $match: slugData || {} },
+      {
+        $lookup: {
+          from: 'filteroptions',
+          localField: 'filterOptionId',
+          foreignField: '_id',
+          as: 'filterOption'
+        }
+      },
+      { $unwind: '$filterOption' },
+      {
+        $lookup: {
+          from: 'filters',
+          localField: 'filterOption.filterId',
+          foreignField: '_id',
+          as: 'filter'
+        }
+      },
+      { $unwind: '$filter' },
+      {
+        $group: {
+          _id: {
+            filterId: '$filter._id',
+            optionSlug: '$filterOption.slug',
+          },
+          filterName: { $first: '$filter.name' },
+          filterSlug: { $first: '$filter.slug' },
+          optionValue: { $first: '$filterOption.value' },
+          optionSlug: { $first: '$filterOption.slug' },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $group: {
+          _id: '$_id.filterId',
+          name: { $first: '$filterName' },
+          slug: { $first: '$filterSlug' },
+          options: {
+            $push: {
+              value: '$optionValue',
+              slug: '$optionSlug',
+              count: '$count'
+            }
+          }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          name: 1,
+          slug: 1,
+          options: 1
+        }
+      }
+    ]);
+
+
+
+
 
     return res.status(200).json({
       success: true,
@@ -228,12 +355,9 @@ const SubCategory =  require('../../../db/model/subCategories')
       totalPages: Math.ceil(totalProducts / limit),
       totalProducts,
       products,
+      filters: filterData,
       filterUsed: slug ? { slug } : undefined,
-      filterOptions: {
-        embroidery: allEmbroidery,
-        fabric: allFabric,
-        color: allColor
-      }
+     
     });
 
 
@@ -259,8 +383,151 @@ const SubCategory =  require('../../../db/model/subCategories')
     }
     };
 
+    const readToShipwithSlug = async (req, res) => {
+      try {
+      const page =  1;
+      const limit = 8; 
+      const skip = (page - 1) * limit;
+  
+      const { slug } = req.params; 
+  
+     
+      let filter = { readyToShip: true };
+
+    
+        if (slug) {
+          filter = {
+            readyToShip: true,
+            $or: [
+              { categorySlug: slug },
+              { subCategorySlug: slug },
+              { groupSlug: slug }
+            ]
+          };
+        }
+
+    const sortCriteria = { createdAt: -1 };
+
+    const products = await Product.find(filter)
+      .skip(skip)
+      .limit(limit)
+      .sort(sortCriteria);
+    
+  
+      return res.status(200).json({
+        success: true,
+        data:{  
+          products,
+       
+        filterUsed: slug ? { slug } : undefined,
+        }
+      });
+  
+  
+      } catch (error) {
+        console.error("Error fetching products:", error);
+        return res.status(500).json({ success: false, message: error.message });
+      }
+       };
+
+       const celebCloset = async (req, res) => {
+        try {
+        const page =  1;
+        const limit = 5; 
+        const skip = (page - 1) * limit;
+    
+       
+        let filter = { celebCloset: true };
+  
+      
+          
+      const sortCriteria = { createdAt: -1 };
+  
+      const products = await Product.find(filter)
+        .skip(skip)
+        .limit(limit)
+        .sort(sortCriteria);
+      
+    
+        return res.status(200).json({
+          success: true,
+          data:{  
+            products,
+          }
+        });
+    
+    
+        } catch (error) {
+          console.error("Error fetching products:", error);
+          return res.status(500).json({ success: false, message: error.message });
+        }
+         };
+    
+
+         const updateCelebCloset = async (req, res) => {
+          try {
+            const { productId } = req.params;
+            const { celebCloset } = req.body;
+            let celebImage = null;
+        
+            // Check if product exists
+            const product = await Product.findById(productId);
+            if (!product) {
+              return res.status(404).json({
+                success: false,
+                message: "Product not found.",
+              });
+            }
+        
+            // Handle file upload if exists
+            if (req.file) {
+              // Delete old image if it exists
+              if (product.celebImage) {
+                const oldImagePath = path.join(__dirname, '../../..', product.celebImage);
+                if (fs.existsSync(oldImagePath)) {
+                  fs.unlinkSync(oldImagePath);
+                }
+              }
+              
+              celebImage = `/public/celebImages/${req.file.filename}`;
+            }
+        
+            // Prepare update object
+            const updateData = {
+              celebCloset: celebCloset === 'true' || celebCloset === true
+            };
+        
+            if (celebImage) {
+              updateData.celebimg = celebImage;
+            }
+        
+            // Update the product
+            const updatedProduct = await Product.findByIdAndUpdate(
+              productId,
+              updateData,
+              { new: true }
+            );
+        
+            return res.status(200).json({
+              success: true,
+              message: "Celeb closet status updated successfully.",
+              product: updatedProduct,
+            });
+          } catch (error) {
+            console.error("Error updating celeb closet:", error);
+            return res.status(500).json({ 
+              success: false, 
+              message: error.message 
+            });
+          }
+        };
+
+
 module.exports = { 
     createProduct,
     getAllProducts,
-    getProductBySlug
+    getProductBySlug,
+    readToShipwithSlug,
+    celebCloset,
+    updateCelebCloset
  };

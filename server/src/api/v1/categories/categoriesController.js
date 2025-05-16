@@ -33,7 +33,7 @@ const addSubCategory = async (req, res) => {
     const { categoryId } = req.params;
     const { name, group } = req.body;
 
-    if (!name || !req.files?.subCategoryImage?.[0]) {
+    if (!name ) {
       return res.status(400).json({ success: false, message: 'Subcategory name and image are required' });
     }
 
@@ -49,10 +49,14 @@ const addSubCategory = async (req, res) => {
       return res.status(409).json({ success: false, message: 'Subcategory already exists' });
     }
 
+    const imagePath = req.files?.subCategoryImage?.[0]?.path 
+    ? path.basename(req.files.subCategoryImage[0].path) 
+    : null;
+
     const SubCategory = await subCategory.create({
       categoryId,
       name: name.trim(),
-      image: path.basename(req.files.subCategoryImage[0].path),
+       image: imagePath,
       group: group?.trim() || ''
     });
 
@@ -94,6 +98,34 @@ const getAllCategories = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+
+const getLatestSubcategories = async (req, res) => {
+  try {
+    const latestSubcategories = await subCategory.aggregate([
+      {
+        $sort: { createdAt: -1 }  // Sort by creation date, descending
+      },
+      { 
+        $limit: 3  // Get the latest 3 subcategories
+      }
+    ]);
+
+    if (!latestSubcategories.length) {
+      return res.status(404).json({ success: false, message: 'No subcategories found' });
+    }
+
+    return res.status(200).json({
+      success: true,  
+      data: latestSubcategories
+    });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 
 const getCategoryById = async (req, res) => {
   try {
@@ -146,6 +178,7 @@ const deleteCategory = async (req, res) => {
   }
 };
 
+
 const deleteSubCategory = async (req, res) => {
   try {
     const { subCategoryId } = req.params;
@@ -164,4 +197,4 @@ const deleteSubCategory = async (req, res) => {
   }
 };
 
-module.exports = { createCategory , addSubCategory , getAllCategories, getCategoryById , deleteCategory , deleteSubCategory };
+module.exports = { createCategory , addSubCategory , getAllCategories, getCategoryById , deleteCategory , deleteSubCategory , getLatestSubcategories};

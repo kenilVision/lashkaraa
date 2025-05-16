@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const {   createCategory , addSubCategory , getAllCategories, getCategoryById , deleteCategory , deleteSubCategory} = require('./categoriesController');
+const {   createCategory , addSubCategory , getAllCategories, getCategoryById , deleteCategory , deleteSubCategory  , getLatestSubcategories} = require('./categoriesController');
 const multer = require('multer')
 const path = require('path')
 
@@ -33,11 +33,13 @@ router.post('/createCategory',
     );
 
     router.get('/getAllCategories', getAllCategories);
+    router.get('/getLatestSubcategories', getLatestSubcategories);
     router.get('/getCategoryById/:categoryId', getCategoryById);
 
     router.delete('/categories/:categoryId', deleteCategory);
     router.delete('/subcategories/:subCategoryId', deleteSubCategory);
-
+    router.delete('/deleteCategory',deleteCategory)
+    router.delete('/deleteSubCategory',deleteSubCategory)
 module.exports = router;
 
 

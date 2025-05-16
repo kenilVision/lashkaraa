@@ -23,7 +23,7 @@ const productSchema = new mongoose.Schema({
   discount: { type: Number, required: true },
 
   categoryId: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true },
-  subCategoryId: { type: mongoose.Schema.Types.ObjectId, ref: 'SubCategory', required: true },
+  subCategoryId: { type: mongoose.Schema.Types.ObjectId, ref: 'SubCategory'},
 
   readyToShip: { type: Boolean, default: false },
   productDetails: [productDetailSchema], 
@@ -37,12 +37,23 @@ const productSchema = new mongoose.Schema({
       type: Number,
       required: true,
       min: 0
+    },
+    fitting: {
+      bust: { type: String },
+      aboveWaist: { type: String },
+      waist: { type: String },
+      hips: { type: String }
+    },
+    blousePadding: {
+      type: Boolean,
+      default: false
     }
   }],
 
   isFeatured: { type: Boolean, default: false },
   isBestseller: { type: Boolean, default: false },
-
+  celebCloset: { type: Boolean, default: false },
+  celebimg: { type: String },
   categorySlug: { type: String },
   subCategorySlug: { type: String },
   groupSlug:{ type: String}

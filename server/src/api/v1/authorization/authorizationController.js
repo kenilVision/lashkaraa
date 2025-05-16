@@ -134,4 +134,37 @@ const signup = async (req, res) => {
   }
 };
 
-module.exports = { login, signup, update };
+const fetchUser = async (req, res) => {
+  try {
+    const userId = req.user.userId; 
+    
+    const user = await User.findById(userId).select('-password'); // Exclude password from response
+    
+    if (!user) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "User not found!" 
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      user: {
+        userId: user._id,
+        firstname: user.firstname,
+        lastname: user.lastname,
+        email: user.email,
+        address: user.address,
+        isActive: user.isActive,
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
+  }
+};
+
+module.exports = { login, signup, update , fetchUser };
