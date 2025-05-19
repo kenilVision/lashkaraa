@@ -1,5 +1,5 @@
 "use client"
-import React from 'react'
+import React , {useState  } from 'react'
 import Link from "next/link";
 import {ArrowLeft} from 'lucide-react'
 import PaymentMethod from '@/components/checkout/payment/PaymentMethod';
@@ -13,13 +13,42 @@ function page() {
     const router = useRouter();
     const user = useSelector((state) => state.user);
     const dispatch = useDispatch();
+    const [selectedType, setSelectedType] = useState("same");
+    const [errors, setErrors] = useState({});
+
+        const validateForm = (formData) => {
+          const newErrors = {};
+
+          if (!formData.firstname?.trim()) newErrors.firstname = "First name is required";
+          if (!formData.lastname?.trim()) newErrors.lastname = "Last name is required";
+          if (!formData.address1?.trim()) newErrors.address1 = "Address1 is required";
+          if (!formData.address2?.trim()) newErrors.address2 = "Address2 is required";
+          if (!formData.city?.trim()) newErrors.city = "City is required";
+          if (!formData.state?.trim()) newErrors.state = "State is required";
+
+          const pincodeStr = formData.pincode?.toString().trim();
+          if (!pincodeStr) newErrors.pincode = "Pincode is required";
+          else if (!/^\d{6}$/.test(pincodeStr)) newErrors.pincode = "Pincode must be 6 digits";
+
+          const phoneStr = formData.phoneNumber?.toString().trim();
+          if (!phoneStr) newErrors.phoneNumber = "Phone number is required";
+          else if (!/^\d{10}$/.test(phoneStr)) newErrors.phoneNumber = "Phone number must be 10 digits";
+
+          setErrors(newErrors);
+          return Object.keys(newErrors).length === 0;
+        };
 
 
     const handlePayNow = async () => {
         try {
           const paymentMethod = "card";
           
-          // Wait for setPayment to complete and get the updated order
+      
+          if (selectedType === "different") {
+            const isValid = validateForm(billingAddress);
+            if (!isValid) return;  // Stop if validation fails
+          }
+
           const updatedOrder = await setPayment(billingAddress, paymentMethod);
           
           // Now dispatch with the latest order
@@ -109,17 +138,17 @@ function page() {
       </section>
 
     <PaymentMethod />
-    <BillingAddress />
+    <BillingAddress  errors={errors} selectedType = {selectedType} setSelectedType = {setSelectedType}/>
       
 
      <div className="flex flex-col gap-4 md:flex-row md:justify-between items-center mt-6">
-      <a
-        href="https://www.lashkaraa.in/cart?logged_in=true"
+      <Link
+                href="/checkout/shipping"
         className="flex items-center text-sm text-gray-600 hover:text-black transition"
       >
         <ArrowLeft className="w-4 h-4 mr-2" />
         <span>Return to bag</span>
-      </a>
+      </Link>
 
       <button
         type="submit"

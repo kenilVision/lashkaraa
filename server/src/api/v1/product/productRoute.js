@@ -2,7 +2,7 @@ const router = require('express').Router();
 const multer = require('multer');
 const path = require('path');
 const { createProduct ,  getAllProducts, readToShipwithSlug,
-    getProductBySlug ,celebCloset , updateCelebCloset} = require('./productController');
+    getProductBySlug ,celebCloset , updateCelebCloset , searchProduct} = require('./productController');
 
 
 const storage = multer.diskStorage({
@@ -31,6 +31,7 @@ router.get("/getAllProducts/:slug", getAllProducts);
 router.get("/readToShipwithSlug/:slug", readToShipwithSlug);
 router.get("/getProductBySlug/:slug", getProductBySlug);
 router.get("/celebCloset", celebCloset);
+router.get("/search", searchProduct);
 
 router.patch('/:productId/celeb', upload.single('celebImage'), updateCelebCloset);
 module.exports = router;

@@ -7,6 +7,7 @@ function Bill({ cart }) {
 
   const { addItemToOrder } = useCheckout();
   console.log('Rendering Bill with cart:', cart);
+
   useEffect(() => {
     console.log("Current cart:", cart); 
     if (cart && cart.length > 0) {
@@ -19,14 +20,14 @@ function Bill({ cart }) {
       }));
       console.log("Prepared items:", newItems); 
       
-      setOrder(prev => {
-        const updated = {
-          ...prev,
-          items: newItems
-        };
-        console.log("Will update order with:", updated); 
-        return updated;
-      });
+      // setOrder(prev => {
+      //   const updated = {
+      //     ...prev,
+      //     items: newItems
+      //   };
+      //   console.log("Will update order with:", updated); 
+      //   return updated;
+      // });
     }
   }, [cart]);
   return (

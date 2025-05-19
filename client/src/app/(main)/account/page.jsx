@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useSelector, useDispatch } from "react-redux";
 import { logout , fetchUser , updateUserProfile } from "../../../store/slice/userSlice"; // Update path accordingly
 import Cookies from "js-cookie";
-
+import OrderPage from "@/components/order/OrderPage";
 
 function Page() {
   const router = useRouter();
@@ -201,7 +201,7 @@ const formData = {
             {activeTab === 'Orders' && (
                 <>
                  <div className="mt-10  mx-auto">
-                     <h2 className="text-lg  mb-3">You haven't placed any orders yet.</h2>
+                    <OrderPage/>
                      </div>
                 </>
             )}

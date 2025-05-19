@@ -1,8 +1,8 @@
 import React, { useState , useEffect } from "react";
 import { useCheckout } from "@/context/checkoutContext";
-function BillingAddress() {
+function BillingAddress({errors , selectedType, setSelectedType}) {
     const { setbillingAddress} = useCheckout();
-    const [selectedType, setSelectedType] = useState("same");
+    
     const [showNewAddressForm, setShowNewAddressForm] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -35,7 +35,7 @@ function BillingAddress() {
     }
   }, [formData, selectedType, setbillingAddress]);
 
-  const errors = {}
+
 
   const handleFormChange = (e) => {
     const { name, value } = e.target;
@@ -71,7 +71,7 @@ function BillingAddress() {
               value="same"
               checked={selectedType === "same"}
               onChange={handleRadioChange}
-              className="peer h-5 w-5 cursor-pointer appearance-none rounded-full border border-slate-300 checked:border-slate-400 transition-all mt-1"
+              className="h-5 w-5 cursor-pointer accent-black mt-1"
             />
             <label htmlFor="same" className="text-gray-800 font-medium">
               Same as shipping address
@@ -94,7 +94,7 @@ function BillingAddress() {
             value="different"
             checked={selectedType === "different"}
             onChange={handleRadioChange}
-            className="peer h-5 w-5 cursor-pointer appearance-none rounded-full border border-slate-300 checked:border-slate-400 transition-all"
+            className="h-5 w-5 cursor-pointer accent-black mt-1"
           />
           <label htmlFor="different" className="text-gray-800 font-medium">
             Use a different billing address
@@ -167,20 +167,20 @@ function BillingAddress() {
         <div className="relative my-2">
           <input
             type="text"
-            name="address"
+            name="address1"
             placeholder="Address Line 1"
-            value={formData.address}
+            value={formData.address1}
             onChange={handleFormChange}
             required
             className={`peer w-full border text-sm border-[#dddddd] px-3 py-3 pt-5 bg-white  placeholder-transparent ${
-              errors.address ? "border-red-500" : ""
+              errors.address1 ? "border-red-500" : ""
             }`}
           />
           <span className="absolute left-3 text-sm text-[#696969] transition-all duration-200 top-1 peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:top-1 peer-focus:translate-y-0 peer-focus:text-sm peer-focus:text-gray-600">
             Address Line 1 <span className="text-red-500">*</span>
           </span>
-          {errors.address && (
-            <p className="text-red-500 text-xs mt-1">{errors.address}</p>
+          {errors.address1 && (
+            <p className="text-red-500 text-xs mt-1">{errors.address1}</p>
           )}
         </div>
 
@@ -248,49 +248,49 @@ function BillingAddress() {
           </div>
 
      
-            <div className="relative">
-            <input
-              type="text"
-              name="pinCode"
-              maxLength="6"
-              pattern="\d{6}"
-              placeholder="Postal/Zip Code"
-                value={formData.pinCode}
-                onChange={handleFormChange}
-              required
-                className={`peer w-full border text-sm border-[#dddddd] px-3 py-3 bg-white pt-5  placeholder-transparent ${
-                  errors.pinCode ? "border-red-500" : ""
-                }`}
-            />
-            <span className="absolute left-3 text-sm text-[#696969] transition-all duration-200 top-1 peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:top-1 peer-focus:translate-y-0 peer-focus:text-sm peer-focus:text-gray-600">
-              Zip Code <span className="text-red-500">*</span>
-            </span>
-            {errors.zip && (
-              <p className="text-red-500 text-xs mt-1">{errors.zip}</p>
-            )}
-          </div>
+         <div className="relative">
+          <input
+            type="text"
+            name="pincode"
+            maxLength="6"
+            pattern="\d{6}"
+            placeholder="Postal/Zip Code"
+            value={formData.pincode}
+            onChange={handleFormChange}
+            required
+            className={`peer w-full border text-sm border-[#dddddd] px-3 py-3 bg-white pt-5 placeholder-transparent ${
+              errors.pincode ? "border-red-500" : ""
+            }`}
+          />
+          <span className="absolute left-3 text-sm text-[#696969] transition-all duration-200 top-1 peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:top-1 peer-focus:translate-y-0 peer-focus:text-sm peer-focus:text-gray-600">
+            Zip Code <span className="text-red-500">*</span>
+          </span>
+          {errors.pincode && (
+            <p className="text-red-500 text-xs mt-1">{errors.pincode}</p>
+          )}
+        </div>
         </div>
         
-          <div className="relative my-2">
-            <input
-              type="tel"
-              name="phoneNumber"
-              required
-              pattern="\d{10}"
-              placeholder="Phone"
-                value={formData.phoneNumber}
-                onChange={handleFormChange}
-                className={`peer w-full border text-sm border-[#dddddd] px-3 bg-white py-3 pt-5  placeholder-transparent ${
-                  errors.phoneNumber ? "border-red-500" : ""
-                }`}
-            />
-            <span className="absolute left-3 text-sm text-[#696969] transition-all duration-200 top-1 peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:top-1 peer-focus:translate-y-0 peer-focus:text-sm peer-focus:text-gray-600">
-              Phone <span className="text-red-500">*</span>
-            </span>
-            {errors.phone && (
-              <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
-            )}
-          </div>
+                  <div className="relative">
+                  <input
+                    type="tel"
+                    name="phoneNumber"
+                    required
+                    pattern="\d{10}"
+                    placeholder="Phone"
+                    value={formData.phoneNumber}
+                    onChange={handleFormChange}
+                    className={`peer w-full border text-sm border-[#dddddd] px-3 bg-white py-3 pt-5 placeholder-transparent ${
+                      errors.phoneNumber ? "border-red-500" : ""
+                    }`}
+                  />
+                  <span className="absolute left-3 text-sm text-[#696969] transition-all duration-200 top-1 peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:top-1 peer-focus:translate-y-0 peer-focus:text-sm peer-focus:text-gray-600">
+                    Phone <span className="text-red-500">*</span>
+                  </span>
+                  {errors.phoneNumber && (
+                    <p className="text-red-500 text-xs mt-1">{errors.phoneNumber}</p>
+                  )}
+                </div>
           </form>
         )}
       </div>

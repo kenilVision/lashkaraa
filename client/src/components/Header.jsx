@@ -20,11 +20,12 @@ import { useRouter } from 'next/navigation'; // For App Router (Next.js 13+)
 
 import { fetchWishlist } from "../store/slice/wishlistSlice";
 import {fetchCart , addToCart , removeFromCart} from "../store/slice/cartSlice"
+import  {fetchUserOrders} from "../store/slice/orderSlice"
 import Cookies from "js-cookie";
 import WishlistSidebar from './WishlistSidebar';
 import CartSidebar from './CartSidebar';
 import { set } from 'date-fns';
-
+import { searchProduct } from '../store/slice/collectionSlice';
 const Header = () => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
@@ -32,6 +33,7 @@ const Header = () => {
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [Wishlist, setWishlistIsOpen] = useState(false);
     const [cart, setCartIsOpen] = useState(false);
+    const[search , setSearch] = useState("")
     const wrapperRef = useRef(null);
     const router = useRouter();
 // ----Kenil ------------------
@@ -39,7 +41,7 @@ const dispatch = useDispatch();
 const { categories, loading } = useSelector((state) => state.category);
 const { items: cartItems } = useSelector((state) => state.cart);
 const { items: wishlistItem } = useSelector((state) => state.wishlist);
-
+const { data  } = useSelector((state) => state.collection);
 useEffect(() => {
   dispatch(fetchCategories());
 
@@ -47,6 +49,8 @@ useEffect(() => {
   if (token) {
     dispatch(fetchWishlist());
     dispatch(fetchCart());
+    dispatch(fetchUserOrders())
+
   }
 }, [dispatch]);
 
@@ -113,6 +117,31 @@ const generateSlug = (name) => {
     const handleDiscoverMouseLeave = () => {
         setIsHoveredDiscover(false);
     };
+
+        const handleSearch = (e) => {
+        e.preventDefault(); // Prevent form submission reload
+        if (search.trim()) {
+        router.push(`/search?q=${encodeURIComponent(search.trim())}`);
+        setIsSearchOpen(false);
+        }
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter') {
+        handleSearch(e);
+        }
+    };
+
+
+         const handleChange = (e) => {
+    const value = e.target.value;
+    setSearch(value);
+    
+    // Directly dispatch with the search value
+    dispatch(searchProduct({
+      filters: `q=${encodeURIComponent(value.trim())}`
+    }));
+  };
 
 
     useEffect(() => {
@@ -279,9 +308,13 @@ const generateSlug = (name) => {
                                 {/* Input Field */}
                                 <input
                                     type="text"
+                                    name="search"
                                     autoFocus
                                     placeholder=""
                                     className="w-full pl-3 pr-12 py-2 outline-none transition-colors peer"
+                                   onChange={handleChange}
+                                     onKeyDown={handleKeyDown}
+                                    value={search}
                                 />
 
                                 {/* Floating Label */}
@@ -293,12 +326,62 @@ const generateSlug = (name) => {
 
                                 {/* Close Icon */}
                                 <Button
-                                    onClick={() => setIsSearchOpen(false)}
+                                    onClick={handleSearch}
                                     className="absolute cursor-pointer right-3 border-0 !p-1 transform transition-transform duration-200 hover:scale-105"
                                     aria-label="Close search"
                                 >
                                     <ModalCloseIcon />
                                 </Button>
+                            </div>
+
+                            <div className='md:flex hidden items-center justify-between md:flex-row lg:gap-14 gap-6 mb-4 mt-4 border-b border-primary'>
+                                <div className=' w-[220px] '>
+                                    suggestion 
+                                </div>
+                                <div className='w-full'>Products</div>
+                            </div>
+                             <div className='md:flex hidden items-center justify-between md:flex-row lg:gap-14 gap-6 mb-4 mt-4 border-b border-primary overflow-x-scroll scroll-hidden '>
+                                <div className=' w-[220px] '>
+                                    suggestion 
+                                </div>
+                                <div className='w-full '>
+                                {
+                                    data?.length > 0 && (
+                                        <div className="flex ">
+                                        {data.slice(0, 5).map((product) => {
+                                            const imageUrl = product?.media?.[0]?.url
+                                            ? `http://localhost:5050/product/${product.media[0].url}`
+                                            : '/placeholder-product.jpg';
+                                            
+                                            return (
+                                            <div key={product._id || product.id} className="group relative p-2">
+                                                <img
+                                                src={imageUrl}
+                                                alt={product.name || 'Product image'}
+                                                className="w-auto h-80 object-contain"
+                                                onError={(e) => {
+                                                    e.target.src = '/placeholder-product.jpg';
+                                                }}
+                                                />
+
+                                                {product.name && (
+                                                <p className="mt-2 text-sm font-medium w-full max-w-[220px]  text-center truncate">
+                                                    {product.name}
+                                                </p>
+                                                )}
+                                                {product?.price &&(
+                                                        <div className=" text-sm ">
+                                                        Rs. {product?.price}
+                                                        </div>
+                                                    )}
+                                            </div>
+                                            );
+                                        })}
+                                        </div>
+                                    )
+                                }
+
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -69,29 +69,32 @@ const FilterSection = ({
                         {filter.options.map((option) => (
                             <label
                                 key={option.value}
-                                className="flex items-center cursor-pointer group"
+                                className={`flex items-center ${option.count === 0 ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer group'}`}
                             >
-                                {
-                                    filter?.name === 'COLOR' ?
-                                        <span className={`${getColorClass(option.slug)} size-3`} onClick={() => toggleFilter(filter.name, option.slug)}></span>
-                                        :
-                                        <Fragment>
-                                            <input
-                                                type="checkbox"
-                                                className="form-checkbox cursor-pointer h-3 w-3 border-gray-300 rounded"
-                                                checked={activeFilters[filter.name]?.includes(option.slug) || false}
-                                                onChange={() => toggleFilter(filter.name, option.slug)}
-                                            />
-                                        </Fragment>
-                                }
-                                <span className="ml-2 text-[13px] text-primary group-hover:text-gray-900 transition-colors">
-                                    {option.value}
-                                    {option.count > 0 && (
-                                        <span className="text-primary ml-1">({option.count})</span>
-                                    )}
+                                {filter?.name === 'COLOR' ? (
+                                <span 
+                                    className={`${getColorClass(option.slug)} size-3 ${option.count === 0 ? 'pointer-events-none' : ''}`}
+                                    onClick={() => option.count > 0 && toggleFilter(filter.name, option.slug)}
+                                ></span>
+                                ) : (
+                                <Fragment>
+                                    <input
+                                    type="checkbox"
+                                    className={`form-checkbox ${option.count === 0 ? 'cursor-not-allowed' : 'cursor-pointer'} h-3 w-3 border-gray-300 rounded`}
+                                    checked={activeFilters[filter.name]?.includes(option.slug) || false}
+                                    onChange={() => option.count > 0 && toggleFilter(filter.name, option.slug)}
+                                    disabled={option.count === 0}
+                                    />
+                                </Fragment>
+                                )}
+                                <span className={`ml-2 text-[13px] ${option.count === 0 ? 'text-gray-400' : 'text-primary group-hover:text-gray-900'} transition-colors`}>
+                                {option.value}
+                                <span className={`${option.count === 0 ? 'text-gray-400' : 'text-primary'} ml-1`}>
+                                    ({option.count})
+                                </span>
                                 </span>
                             </label>
-                        ))}
+                            ))}
                     </div>
                     <div
                         className={`mt-2 space-y-2 grid grid-cols-2 md:hidden transition-all duration-300 overflow-auto ${expandedSections[filter.name] ? ' opacity-100' : 'max-h-0 opacity-0'}`}

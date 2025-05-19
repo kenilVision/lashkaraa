@@ -78,13 +78,13 @@ function page() {
       </div>
 
       <div className="flex flex-col gap-4 md:flex-row md:justify-between items-center mt-6">
-      <a
-        href="https://www.lashkaraa.in/cart?logged_in=true"
+       <Link
+                href="/checkout/information"
         className="flex items-center text-sm text-gray-600 hover:text-black transition"
       >
         <ArrowLeft className="w-4 h-4 mr-2" />
         <span>Return to bag</span>
-      </a>
+      </Link>
 
       <button
         type="submit"

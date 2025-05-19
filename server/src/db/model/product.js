@@ -2,12 +2,12 @@ const mongoose = require('mongoose');
 
 const productDetailSchema = new mongoose.Schema({
   style: { type: String },
-  color: { type: String },
-  fabric: { type: String },
-  embroidery: { type: String },
   description: { type: String, required: true },
-  message: { type: String, required: true }
-}, { _id: false });
+  message: { type: String, required: true },
+}, {
+  _id: false,
+  strict: false, 
+});
 
 const productSchema = new mongoose.Schema({
   name: { type: String, required: true },

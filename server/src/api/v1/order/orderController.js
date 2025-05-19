@@ -1,7 +1,8 @@
 const Order = require('../../../db/model/order'); 
 
     const placeOrder= async (req, res) => {
-    const { userId, shippingAddress,billingAddress, items, paymentMethod = 'cod' } = req.body;
+          const userId = req.user.userId;
+            const { shippingAddress,billingAddress, items, paymentMethod = 'cod' } = req.body;
 
     try { 
 
@@ -39,23 +40,29 @@ const Order = require('../../../db/model/order');
     };
 
 
-    const getUserOrders = async (req, res) => {
-    const { userId } = req.params;  
-    try {
-  
-      const orders = await Order.find({ userId }).sort({ created_at: -1 });  
-      if (orders.length === 0) {
-        return res.status(404).json({ success: false, message: 'No orders found for this user' });
-      }
-  
-    
-      res.status(200).json({ success: true, orders });
-    } catch (error) {
-      console.error('Error fetching user orders:', error);
-      res.status(500).json({ success: false, message: 'Failed to fetch orders', error: error.message });
+const getUserOrders = async (req, res) => {
+  const userId = req.user.userId;
+  try {
+    const orders = await Order.find({ userId })
+      .sort({ createdAt: -1 })
+      .populate('items.productId'); // populate productId inside items array
+
+    if (!orders.length) {
+      return res
+        .status(404)
+        .json({ success: false, message: 'No orders found for this user' });
     }
-     };
-  
+
+    res.status(200).json({ success: true, orders });
+  } catch (error) {
+    console.error('Error fetching user orders:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch orders',
+      error: error.message,
+    });
+  }
+};
 
     const updateOrderStatus = async (req, res) => {
         const { orderId } = req.params;  

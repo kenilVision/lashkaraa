@@ -1,14 +1,15 @@
 'use client';
 import { createContext, useContext, useState , useEffect } from 'react';
-import { useSelector } from 'react-redux';
 const CheckoutContext = createContext();
+import { useSelector, useDispatch } from "react-redux";
+import { updateUserProfile } from "../store/slice/userSlice"; 
 
 export function CheckoutProvider({ children }) {    
 
     const [shippingAddress, setShippingAddress] = useState(null);
     const [billingAddress, setbillingAddress] = useState(null);
     const cart = useSelector(state => state.cart.items);
-
+     const dispatch = useDispatch();
       const [order, setOrder] = useState({
         userId: "",
         shippingAddress: {
@@ -39,9 +40,14 @@ export function CheckoutProvider({ children }) {
         size: item.size ?? '',
         note: item.note ?? ''
     }));
+    console.log(shippingAddress)
+    const formData = {
+    address: {...shippingAddress}
+  };
 
+    const user = dispatch(updateUserProfile(formData))
     const newOrder = {
-        ...order, // Current order state
+        ...order, 
         userId,
         shippingAddress,
         items: formattedItems
